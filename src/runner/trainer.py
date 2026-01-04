@@ -34,11 +34,11 @@ class TrainingConfig:
     output_dir: str = config.CHECKPOINT_PATH
     logs_dir: str = config.LOGS_DIR
     # 打印日志「损失」步数
-    logs_step = 50
+    logs_step:int = 50
     # 保存模型步数
-    checkpoint_step = 100
+    checkpoint_step:int = 100
     # 评估模型步数
-    evaluate_step = 200
+    evaluate_step:int = 200
 
 
 class Trainer:
@@ -126,6 +126,7 @@ class Trainer:
                     tqdm.write(f'[Epoch | {epoch}，Step | {self.global_step} ] Valid  {metric_str} ')
                     # 早停
                     if self._should_early_stop(metric):
+                        print("达到早停条件，退出训练")
                         return
 
                 self.global_step += 1
@@ -220,7 +221,18 @@ class Trainer:
 if __name__ == '__main__':
     model = SpellCheckModel(free_param=True)
     data_dict = datasets.load_from_disk(str(config.SPELL_CHECK_DATA_DIR / 'processed' / 'bert'))
-    train_config = TrainingConfig()
+    train_config = TrainingConfig(
+        epoch=10,
+        train_batch_size=32,
+        test_batch_size=16,
+        valid_batch_size=16,
+        logs_step=100,
+        # 保存模型步数
+        checkpoint_step=5000,
+        # 评估模型步数
+        evaluate_step=500,
+        enable_amp=False
+    )
 
 
     def compute_metric(pred, label):
@@ -244,9 +256,9 @@ if __name__ == '__main__':
 
 
     train = Trainer(model,
-                    data_dict['train'].select(range(1000)),
+                    data_dict['train'],
                     data_dict['test'],
-                    data_dict['valid'].select(range(1000)),
+                    data_dict['valid'],
                     train_config,
                     compute_metric
                     )

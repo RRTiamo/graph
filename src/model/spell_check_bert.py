@@ -6,7 +6,7 @@ from configuration import config
 
 
 class SpellCheckModel(nn.Module):
-    def __init__(self, free_param):
+    def __init__(self, free_param=False):
         super().__init__()
         # bert
         self.bert = AutoModel.from_pretrained(config.BERT_MODEL_NAME)
@@ -24,8 +24,9 @@ class SpellCheckModel(nn.Module):
         last_hidden_state = output.last_hidden_state
         logits = self.linear(last_hidden_state)
         pred = torch.argmax(logits, dim=-1)
+        # 掩码
         pred = pred.masked_fill(attention_mask == 0, self.bert.config.pad_token_id)
-        # batch_size,seq_len,vocab_size
+        # batch_size,seq_len
         res = {'pred': pred}
         if label is not None:
             # 计算损失 N*C N
